@@ -4,84 +4,68 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const {
+  MEMBERSHIP_ID,
+  BIRTH_DATE,
+  COURT_TIME,
+  BOOKING_URL
+} = process.env;
 
-(async () => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: chromium.args,
-    executablePath: await chromium.executablePath(),
-    defaultViewport: chromium.defaultViewport,
-  });
+const bookingDate = new Date();
+bookingDate.setDate(bookingDate.getDate() + 1);
+const yyyy = bookingDate.getFullYear();
+const mm = String(bookingDate.getMonth() + 1).padStart(2, '0');
+const dd = String(bookingDate.getDate()).padStart(2, '0');
+const bookingDateStr = `${yyyy}-${mm}-${dd}`;
 
-  const page = await browser.newPage();
+const browser = await puppeteer.launch({
+  args: chromium.args,
+  defaultViewport: chromium.defaultViewport,
+  executablePath: await chromium.executablePath(),
+  headless: chromium.headless,
+});
 
-  const bookingUrl = 'https://www.klubkelapagading.com/booking/6/tennis-outdor'; // OUTDOOR
-  const membershipId = 'TM103540';
-  const birthDate = '04/10/1995';
-  const jamLapangan = '21'; // court hour
+const page = await browser.newPage();
+await page.goto(BOOKING_URL, { waitUntil: 'domcontentloaded' });
 
-  // === Step 1: Calculate tomorrow's date in YYYY-MM-DD format ===
-  let tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  let year = tomorrow.getFullYear();
-  let month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-  let day = String(tomorrow.getDate()).padStart(2, '0');
-  let bookingDate = `${year}-${month}-${day}`;
+console.log("🌐 Page opened");
 
-  console.log(`📅 Target booking date: ${bookingDate}`);
-
-  // === Step 2: Load the booking page ===
-  await page.goto(bookingUrl, { waitUntil: 'networkidle2' });
-
-  // === Step 3: Wait for form to load ===
-  await page.waitForSelector('#membership_id');
-  await page.type('#membership_id', membershipId);
-
-  await page.waitForSelector('input[name="tanggal_lahir"]');
-  await page.type('input[name="tanggal_lahir"]', birthDate);
-
-  console.log('✅ Membership data filled');
-
-  // === Step 4: Click booking date ===
-  await page.waitForSelector(`button.tanggal-booking[data-tanggal="${bookingDate}"]`, { timeout: 5000 });
-  await page.click(`button.tanggal-booking[data-tanggal="${bookingDate}"]`);
-
-  console.log('📅 Booking date selected, waiting for lapangan...');
-
-  // === Step 5: Wait and retry until lapangan is available ===
-  let lapanganFound = false;
-  while (!lapanganFound) {
-    try {
-      await page.waitForSelector(`button.nomor-lapangan[data-lapangan="${jamLapangan}"]`, { timeout: 1000 });
-      await page.click(`button.nomor-lapangan[data-lapangan="${jamLapangan}"]`);
-      lapanganFound = true;
-      console.log('✅ Lapangan selected');
-    } catch {
-      console.log('⏳ Lapangan not ready yet, retrying...');
-      await page.reload({ waitUntil: 'networkidle2' });
-      await page.waitForSelector('#membership_id');
-      await page.type('#membership_id', membershipId);
-      await page.waitForSelector('input[name="tanggal_lahir"]');
-      await page.type('input[name="tanggal_lahir"]', birthDate);
-      await page.waitForSelector(`button.tanggal-booking[data-tanggal="${bookingDate}"]`);
-      await page.click(`button.tanggal-booking[data-tanggal="${bookingDate}"]`);
-    }
+// Wait until the "membership_id" field is visible
+let ready = false;
+for (let i = 0; i < 60; i++) {
+  const exists = await page.$('#membership_id');
+  if (exists) {
+    ready = true;
+    break;
   }
-
-  // === Step 6: Click booking button ===
-  await page.waitForSelector('button.btn-booking', { timeout: 3000 });
-  await page.click('button.btn-booking');
-  console.log('🚀 Booking button clicked');
-
-  // === Step 7: Confirm booking ===
-  await page.waitForSelector('button.btn-confirm-booking', { timeout: 3000 });
-  await page.click('button.btn-confirm-booking');
-  console.log('🔒 Confirm clicked');
-
-  // === Step 8: Final Swal confirmation ===
-  await page.waitForSelector('button.swal2-confirm.swal2-styled', { timeout: 3000 });
-  await page.click('button.swal2-confirm.swal2-styled');
-  console.log('🎉 Final confirmation done!');
-
+  console.log('⏳ Lapangan not ready yet, retrying...');
+  await page.waitForTimeout(1000);
+}
+if (!ready) {
+  console.error('❌ Booking form not available.');
   await browser.close();
-})();
+  process.exit(1);
+}
+
+console.log('✅ Form is ready, filling in...');
+
+// Fill form
+await page.type('#membership_id', MEMBERSHIP_ID);
+await page.type('input[name="tanggal_lahir"]', BIRTH_DATE);
+await page.waitForTimeout(300);
+await page.click(`button.tanggal-booking[data-tanggal="${bookingDateStr}"]`);
+await page.waitForTimeout(400);
+await page.waitForSelector(`button.nomor-lapangan[data-lapangan="${COURT_TIME}"]`, { timeout: 5000 });
+await page.click(`button.nomor-lapangan[data-lapangan="${COURT_TIME}"]`);
+await page.waitForTimeout(400);
+
+// Click booking and confirm
+await page.click('button.btn-booking');
+await page.waitForTimeout(400);
+await page.click('button.btn-confirm-booking');
+await page.waitForTimeout(400);
+await page.click('button.swal2-confirm.swal2-styled');
+
+console.log('✅ Booking attempt finished.');
+
+await browser.close();
