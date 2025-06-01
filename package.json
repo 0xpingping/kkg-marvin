@@ -1,11 +1,25 @@
-{
-  "name": "kkg-marvin",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "start": "node booking.js"
-  },
-  "dependencies": {
-    "puppeteer": "^21.3.8"
-  }
-}
+name: Run Tennis Court Booking
+
+on:
+  schedule:
+    - cron: '0 23 * * *' # Runs at 6:00 AM Jakarta time (UTC+7 = 23:00 UTC)
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  book-tennis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🚀 Run booking script
+        run: npm start
