@@ -1,7 +1,6 @@
 {
   "name": "kkg-marvin",
   "version": "1.0.0",
-  "main": "booking.js",
   "type": "module",
   "dependencies": {
     "puppeteer-core": "^21.3.8",
