@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 
 const membershipId = 'TM103540';
 const birthDate = '04/10/1995';
-const jamLapangan = '20'; // lapangan number
+const jamLapangan = '21'; // lapangan number
 const bookingUrl = 'https://www.klubkelapagading.com/booking/6/tennis-outdor';
 
 // Date logic
