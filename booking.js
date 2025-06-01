@@ -1,5 +1,9 @@
-const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 
 (async () => {
   const browser = await puppeteer.launch({
