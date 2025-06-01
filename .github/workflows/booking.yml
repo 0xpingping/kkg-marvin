@@ -1,19 +1,19 @@
-name: Book Tennis Court
+name: Tennis Court Booking
 
 on:
   schedule:
-    - cron: '45 22 * * *'  # runs at 5:45 AM Jakarta (UTC+7 = 22:45 UTC)
-  workflow_dispatch:
+    - cron: '50 22 * * *' # Runs daily at 22:50 UTC (5:50 AM Jakarta)
+  workflow_dispatch: # Allows manual run from GitHub UI
 
 jobs:
-  book:
+  book-court:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: 20
@@ -22,4 +22,4 @@ jobs:
         run: npm install
 
       - name: Run booking script
-        run: node booking.js
+        run: npm start
