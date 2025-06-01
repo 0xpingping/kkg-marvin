@@ -6,6 +6,6 @@
     "start": "node booking.js"
   },
   "dependencies": {
-    "puppeteer": "^20.8.0"
+    "puppeteer": "^21.3.8"
   }
 }
