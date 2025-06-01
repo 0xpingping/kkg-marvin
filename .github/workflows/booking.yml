@@ -3,7 +3,7 @@ name: Tennis Court Booking
 on:
   schedule:
     - cron: '50 22 * * *' # Runs daily at 22:50 UTC (5:50 AM Jakarta)
-  workflow_dispatch: # Allows manual run from GitHub UI
+  workflow_dispatch:
 
 jobs:
   book-court:
