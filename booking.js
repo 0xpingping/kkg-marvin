@@ -1,71 +1,88 @@
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
-import dotenv from 'dotenv';
 
-dotenv.config();
+const membershipId = 'TM103540';
+const birthDate = '04/10/1995';
+const jamLapangan = '21'; // court number
+const maxRetryTime = 60 * 1000; // 60 seconds max retry for page ready
 
-const {
-  MEMBERSHIP_ID,
-  BIRTH_DATE,
-  COURT_TIME,
-  BOOKING_URL
-} = process.env;
+function tomorrowDateString() {
+  let tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const y = tomorrow.getFullYear();
+  const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const d = String(tomorrow.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
-const bookingDate = new Date();
-bookingDate.setDate(bookingDate.getDate() + 1);
-const yyyy = bookingDate.getFullYear();
-const mm = String(bookingDate.getMonth() + 1).padStart(2, '0');
-const dd = String(bookingDate.getDate()).padStart(2, '0');
-const bookingDateStr = `${yyyy}-${mm}-${dd}`;
+(async () => {
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: true,
+    ignoreHTTPSErrors: true,
+  });
 
-const browser = await puppeteer.launch({
-  args: chromium.args,
-  defaultViewport: chromium.defaultViewport,
-  executablePath: await chromium.executablePath(),
-  headless: chromium.headless,
-});
+  const page = await browser.newPage();
 
-const page = await browser.newPage();
-await page.goto(BOOKING_URL, { waitUntil: 'domcontentloaded' });
+  const bookingUrl = 'https://www.klubkelapagading.com/booking/6/tennis-outdor#customer-info';
+  await page.goto(bookingUrl, { waitUntil: 'networkidle2' });
 
-console.log("🌐 Page opened");
+  const startTime = Date.now();
+  let formReady = false;
 
-// Wait until the "membership_id" field is visible
-let ready = false;
-for (let i = 0; i < 60; i++) {
-  const exists = await page.$('#membership_id');
-  if (exists) {
-    ready = true;
-    break;
+  console.log('⏳ Waiting for booking form to be ready...');
+
+  // Wait & refresh loop max 60s
+  while (Date.now() - startTime < maxRetryTime) {
+    try {
+      await page.waitForSelector('#membership_id', { timeout: 2000 });
+      formReady = true;
+      break;
+    } catch {
+      console.log('⏳ Lapangan not ready yet, refreshing page...');
+      await page.reload({ waitUntil: 'networkidle2' });
+    }
   }
-  console.log('⏳ Lapangan not ready yet, retrying...');
-  await page.waitForTimeout(1000);
-}
-if (!ready) {
-  console.error('❌ Booking form not available.');
+
+  if (!formReady) {
+    console.log('❌ Booking form not available after retrying 60 seconds. Exiting.');
+    await browser.close();
+    process.exit(1);
+  }
+
+  console.log('✅ Booking form ready, filling data...');
+
+  // Fill membership ID and birth date
+  await page.type('#membership_id', membershipId);
+  await page.type('input[name="tanggal_lahir"]', birthDate);
+
+  // Select date button
+  const bookingDate = tomorrowDateString();
+  await page.waitForSelector(`button.tanggal-booking[data-tanggal="${bookingDate}"]`, { timeout: 5000 });
+  await page.click(`button.tanggal-booking[data-tanggal="${bookingDate}"]`);
+
+  // Wait a moment for time buttons to load after date selection
+  await page.waitForTimeout(500);
+
+  // Select court/time button
+  await page.waitForSelector(`button.nomor-lapangan[data-lapangan="${jamLapangan}"]`, { timeout: 5000 });
+  await page.click(`button.nomor-lapangan[data-lapangan="${jamLapangan}"]`);
+
+  // Click booking button
+  await page.waitForSelector('button.btn-booking', { timeout: 5000 });
+  await page.click('button.btn-booking');
+
+  // Confirm booking
+  await page.waitForSelector('button.btn-confirm-booking', { timeout: 5000 });
+  await page.click('button.btn-confirm-booking');
+
+  // Wait for final confirmation popup and click confirm
+  await page.waitForSelector('button.swal2-confirm.swal2-styled', { timeout: 5000 });
+  await page.click('button.swal2-confirm.swal2-styled');
+
+  console.log('🎉 Booking process completed.');
+
   await browser.close();
-  process.exit(1);
-}
-
-console.log('✅ Form is ready, filling in...');
-
-// Fill form
-await page.type('#membership_id', MEMBERSHIP_ID);
-await page.type('input[name="tanggal_lahir"]', BIRTH_DATE);
-await page.waitForTimeout(300);
-await page.click(`button.tanggal-booking[data-tanggal="${bookingDateStr}"]`);
-await page.waitForTimeout(400);
-await page.waitForSelector(`button.nomor-lapangan[data-lapangan="${COURT_TIME}"]`, { timeout: 5000 });
-await page.click(`button.nomor-lapangan[data-lapangan="${COURT_TIME}"]`);
-await page.waitForTimeout(400);
-
-// Click booking and confirm
-await page.click('button.btn-booking');
-await page.waitForTimeout(400);
-await page.click('button.btn-confirm-booking');
-await page.waitForTimeout(400);
-await page.click('button.swal2-confirm.swal2-styled');
-
-console.log('✅ Booking attempt finished.');
-
-await browser.close();
+})();
