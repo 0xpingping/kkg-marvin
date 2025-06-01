@@ -1,64 +1,73 @@
 import puppeteer from 'puppeteer';
 
-async function bookTennisCourt() {
-  const membershipId = 'TM103540';
-  const birthDate = '04/10/1995'; // dd/mm/yyyy format as per your site
-  const jamLapangan = '21'; // court time slot
+const membershipId = 'TM103540';
+const birthDate = '04/10/1995';
+const jamLapangan = '21';  // court number
+const url = 'https://www.klubkelapagading.com/booking/6/tennis-outdor';
+
+async function runBooking() {
+  // Calculate tomorrow's date in YYYY-MM-DD format
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const year = tomorrow.getFullYear();
   const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
   const day = String(tomorrow.getDate()).padStart(2, '0');
-  const bookingDate = `${year}-${month}-${day}`; // e.g., "2025-06-02"
+  const bookingDate = `${year}-${month}-${day}`;
 
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: "new",
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-  const page = await browser.newPage();
-  await page.goto('https://www.klubkelapagading.com/booking/6/tennis-outdor#customer-info', {
-    waitUntil: 'networkidle0',
-  });
 
-  // Fill membership ID
-  await page.waitForSelector('#membership_id');
-  await page.type('#membership_id', membershipId);
+  try {
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle0' });
 
-  // Fill birth date
-  await page.waitForSelector('input[name="tanggal_lahir"]');
-  await page.type('input[name="tanggal_lahir"]', birthDate);
+    // Fill membership ID and birthdate
+    await page.waitForSelector('#membership_id', { timeout: 10000 });
+    await page.type('#membership_id', membershipId, { delay: 30 });
 
-  // Click the date button for bookingDate
-  const dateSelector = `button.tanggal-booking[data-tanggal="${bookingDate}"]`;
-  await page.waitForSelector(dateSelector, { timeout: 10000 });
-  await page.click(dateSelector);
+    await page.waitForSelector('input[name="tanggal_lahir"]', { timeout: 10000 });
+    await page.type('input[name="tanggal_lahir"]', birthDate, { delay: 30 });
+    await page.evaluate(() => {
+      const input = document.querySelector('input[name="tanggal_lahir"]');
+      input.dispatchEvent(new Event('change'));
+    });
 
-  // Wait for time slots buttons to load (at least one)
-  await page.waitForSelector('button.nomor-lapangan', { timeout: 15000 });
+    // Wait for and click the booking date button
+    const bookingDateSelector = `button.tanggal-booking[data-tanggal="${bookingDate}"]`;
+    await page.waitForSelector(bookingDateSelector, { timeout: 15000 });
+    await page.click(bookingDateSelector);
 
-  // Click the time slot button for your chosen court
-  const timeSelector = `button.nomor-lapangan[data-lapangan="${jamLapangan}"]`;
-  await page.waitForSelector(timeSelector, { timeout: 10000 });
-  await page.click(timeSelector);
+    // Wait for time slot buttons to load after date selection
+    await page.waitForSelector('button.nomor-lapangan', { timeout: 15000 });
 
-  // Click booking button
-  await page.waitForSelector('button.btn-booking', { timeout: 10000 });
-  await page.click('button.btn-booking');
+    // Select desired court time button
+    const lapanganSelector = `button.nomor-lapangan[data-lapangan="${jamLapangan}"]`;
+    await page.waitForSelector(lapanganSelector, { timeout: 15000 });
+    await page.click(lapanganSelector);
 
-  // Click confirm booking button
-  await page.waitForSelector('button.btn-confirm-booking', { timeout: 10000 });
-  await page.click('button.btn-confirm-booking');
+    // Click booking button
+    const bookingBtnSelector = 'button.btn-booking';
+    await page.waitForSelector(bookingBtnSelector, { timeout: 10000 });
+    await page.click(bookingBtnSelector);
 
-  // Click final confirmation Swal button
-  await page.waitForSelector('button.swal2-confirm.swal2-styled', { timeout: 10000 });
-  await page.click('button.swal2-confirm.swal2-styled');
+    // Click confirm booking button
+    const confirmBtnSelector = 'button.btn-confirm-booking';
+    await page.waitForSelector(confirmBtnSelector, { timeout: 10000 });
+    await page.click(confirmBtnSelector);
 
-  console.log('Booking attempted.');
+    // Final confirmation (SweetAlert2)
+    const finalConfirmSelector = 'button.swal2-confirm.swal2-styled';
+    await page.waitForSelector(finalConfirmSelector, { timeout: 10000 });
+    await page.click(finalConfirmSelector);
 
-  await browser.close();
+    console.log('Booking process completed!');
+  } catch (e) {
+    console.error('Booking failed:', e);
+  } finally {
+    await browser.close();
+  }
 }
 
-bookTennisCourt().catch((e) => {
-  console.error('Booking failed:', e);
-  process.exit(1);
-});
+runBooking();
