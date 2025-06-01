@@ -1,19 +1,15 @@
-name: Booking Tennis Court
+name: Tennis Booking
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # Manual trigger for testing
   schedule:
-    - cron: "45 10 * * *" # 10:45 UTC ~ 17:45 Jakarta time, adjust as needed
+    - cron: '50 22 * * *'  # Runs at 22:50 UTC (convert to your timezone)
 
 jobs:
-  booking:
+  book-tennis:
     runs-on: ubuntu-latest
 
     steps:
-
-- name: Clean cache (optional)
-  run: rm -rf node_modules package-lock.json
-
       - name: Checkout repo
         uses: actions/checkout@v3
 
