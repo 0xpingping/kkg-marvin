@@ -1,19 +1,19 @@
-name: Tennis Court Booking
+name: Booking Tennis Court
 
 on:
-  schedule:
-    - cron: '50 22 * * *' # Runs daily at 22:50 UTC (5:50 AM Jakarta)
   workflow_dispatch:
+  schedule:
+    - cron: "45 10 * * *" # 10:45 UTC ~ 17:45 Jakarta time, adjust as needed
 
 jobs:
-  book-court:
+  booking:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
