@@ -34,7 +34,6 @@ function tomorrowDateString() {
 
   console.log('⏳ Waiting for booking form to be ready...');
 
-  // Wait & refresh loop max 60s
   while (Date.now() - startTime < maxRetryTime) {
     try {
       await page.waitForSelector('#membership_id', { timeout: 2000 });
@@ -54,31 +53,24 @@ function tomorrowDateString() {
 
   console.log('✅ Booking form ready, filling data...');
 
-  // Fill membership ID and birth date
   await page.type('#membership_id', membershipId);
   await page.type('input[name="tanggal_lahir"]', birthDate);
 
-  // Select date button
   const bookingDate = tomorrowDateString();
   await page.waitForSelector(`button.tanggal-booking[data-tanggal="${bookingDate}"]`, { timeout: 5000 });
   await page.click(`button.tanggal-booking[data-tanggal="${bookingDate}"]`);
 
-  // Wait a moment for time buttons to load after date selection
   await page.waitForTimeout(500);
 
-  // Select court/time button
   await page.waitForSelector(`button.nomor-lapangan[data-lapangan="${jamLapangan}"]`, { timeout: 5000 });
   await page.click(`button.nomor-lapangan[data-lapangan="${jamLapangan}"]`);
 
-  // Click booking button
   await page.waitForSelector('button.btn-booking', { timeout: 5000 });
   await page.click('button.btn-booking');
 
-  // Confirm booking
   await page.waitForSelector('button.btn-confirm-booking', { timeout: 5000 });
   await page.click('button.btn-confirm-booking');
 
-  // Wait for final confirmation popup and click confirm
   await page.waitForSelector('button.swal2-confirm.swal2-styled', { timeout: 5000 });
   await page.click('button.swal2-confirm.swal2-styled');
 
