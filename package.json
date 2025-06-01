@@ -6,7 +6,7 @@
     "start": "node booking.js"
   },
   "dependencies": {
-    "puppeteer-core": "^20.8.0",
-    "@sparticuz/chromium": "^19.8.2"
+  "puppeteer-core": "^20.8.0",
+  "@sparticuz/chromium": "^20.8.0"
   }
 }
