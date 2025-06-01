@@ -1,10 +1,11 @@
 {
   "name": "kkg-marvin",
   "version": "1.0.0",
-  "scripts": {
-    "start": "node booking.js"
-  },
+  "main": "booking.js",
+  "type": "module",
   "dependencies": {
-    "puppeteer": "^21.3.8"
+    "puppeteer-core": "^21.3.8",
+    "@sparticuz/chromium": "^112.0.0",
+    "dotenv": "^16.4.5"
   }
 }
