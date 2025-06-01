@@ -1,22 +1,20 @@
-name: Tennis Booking
+name: Booking Automation
 
 on:
-  workflow_dispatch:   # Manual trigger for testing
+  workflow_dispatch:
   schedule:
-    - cron: '50 22 * * *'  # Runs at 22:50 UTC (convert to your timezone)
+    - cron: '45 17 * * *'  # runs at 17:45 daily UTC adjust as needed
 
 jobs:
-  book-tennis:
+  run-booking:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
+      
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: '20'
 
       - name: Install dependencies
         run: npm install
