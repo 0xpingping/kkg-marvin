@@ -1,4 +1,6 @@
 name: Booking Tennis Court
+- name: Clean cache (optional)
+  run: rm -rf node_modules package-lock.json
 
 on:
   workflow_dispatch:
